@@ -36,7 +36,12 @@ export function SelfieScreen({ onSelfie }: { onSelfie(image: string): void }) {
           return;
         }
         streamRef.current = stream;
-        if (videoRef.current) videoRef.current.srcObject = stream;
+        const video = videoRef.current;
+        if (video) {
+          video.srcObject = stream;
+          // iOS Safari doesn't always honour autoPlay for camera streams; a failed play() is harmless.
+          video.play()?.catch(() => {});
+        }
         setCamera('live');
       })
       .catch(() => {

@@ -42,6 +42,8 @@ export function sessionReducer(s: Session, a: Action): Session {
       return {
         ...s,
         selfie: a.image,
+        // New photo: show it in the studio rather than a look made from the old one.
+        currentLookId: null,
         view: 'studio',
       };
 

@@ -26,7 +26,12 @@ function uploadInput(): HTMLInputElement {
   return screen.getByLabelText(/upload photo/i) as HTMLInputElement;
 }
 
+let play: ReturnType<typeof vi.fn>;
+
 beforeEach(() => {
+  // jsdom doesn't implement media playback.
+  play = vi.fn().mockResolvedValue(undefined);
+  Object.defineProperty(HTMLMediaElement.prototype, 'play', { value: play, configurable: true, writable: true });
   mockedResize.mockReset();
   mockedResize.mockImplementation(async (src) => {
     if (src instanceof Blob && !src.type.startsWith('image/')) throw new Error('NOT_IMAGE');
@@ -126,5 +131,24 @@ describe('SelfieScreen', () => {
     await waitFor(() => expect(video.srcObject).toBe(stream));
     unmount();
     expect(track.stop).toHaveBeenCalled();
+  });
+  it('starts playback explicitly once the stream is attached (iOS)', async () => {
+    const { stream } = fakeStream();
+    setMediaDevices({ getUserMedia: vi.fn().mockResolvedValue(stream) });
+    const { container } = render(<SelfieScreen onSelfie={vi.fn()} />);
+    const video = container.querySelector('video')!;
+    await waitFor(() => expect(play).toHaveBeenCalled());
+    expect(play.mock.contexts[0]).toBe(video);
+    expect(video.srcObject).toBe(stream);
+  });
+
+  it('a rejected play() is ignored and the camera stays live', async () => {
+    play.mockRejectedValue(new Error('NotAllowedError'));
+    const { stream } = fakeStream();
+    setMediaDevices({ getUserMedia: vi.fn().mockResolvedValue(stream) });
+    render(<SelfieScreen onSelfie={vi.fn()} />);
+    await waitFor(() => expect(play).toHaveBeenCalled());
+    expect(screen.getByRole('button', { name: /take selfie/i })).toBeInTheDocument();
+    expect(screen.queryByText(NO_CAMERA)).not.toBeInTheDocument();
   });
 });

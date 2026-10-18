@@ -111,7 +111,7 @@ describe('sessionReducer', () => {
     expect(result.selfie).toBe('data:image/png;base64,ABC');
   });
 
-  it('SET_SELFIE sets selfie, goes to studio, keeps looks', () => {
+  it('SET_SELFIE sets selfie, goes to studio, keeps looks, clears the current look', () => {
     const looks: Look[] = [
       { id: 'id1', label: 'Fade', image: 'img1', favorite: false },
     ];
@@ -130,6 +130,7 @@ describe('sessionReducer', () => {
     expect(result.selfie).toBe(newSelfie);
     expect(result.view).toBe('studio');
     expect(result.looks).toEqual(looks);
+    expect(result.currentLookId).toBeNull();
   });
 
   it('SELECT_LOOK sets currentLookId', () => {
