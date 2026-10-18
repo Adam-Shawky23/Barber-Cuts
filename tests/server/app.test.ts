@@ -1,3 +1,5 @@
+import http from 'node:http';
+import type { AddressInfo } from 'node:net';
 import request from 'supertest';
 import { createApp } from '../../server/app';
 import { createLimiter } from '../../server/rateLimit';
@@ -84,4 +86,48 @@ test('body over 8mb -> 413', async () => {
   const big = 'data:image/jpeg;base64,' + 'A'.repeat(9 * 1024 * 1024);
   const res = await request(make(vi.fn())).post('/api/tryon').send({ image: big, styleId: 'bald' });
   expect(res.status).toBe(413);
+});
+
+test('does not advertise Express via x-powered-by', async () => {
+  const res = await request(make(vi.fn())).get('/api/health');
+  expect(res.headers['x-powered-by']).toBeUndefined();
+});
+
+test('client disconnect aborts the provider signal and frees the slot', async () => {
+  let seen: AbortSignal | undefined;
+  const edit = vi.fn((_img: string, _prompt: string, signal?: AbortSignal) => {
+    seen = signal;
+    return new Promise<string>((_, reject) => {
+      signal?.addEventListener('abort', () => reject(new ProviderError('FAILED', 'ABORTED')));
+    });
+  });
+  const app = make(edit);
+  const server = app.listen(0);
+  try {
+    const { port } = server.address() as AddressInfo;
+    const req = http.request({
+      port,
+      method: 'POST',
+      path: '/api/tryon',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    req.on('error', () => {}); // socket hang up is expected
+    req.end(JSON.stringify({ image: IMG, styleId: 'bald' }));
+
+    await vi.waitFor(() => expect(edit).toHaveBeenCalled());
+    expect(seen).toBeInstanceOf(AbortSignal);
+    expect(seen!.aborted).toBe(false);
+
+    req.destroy();
+    await vi.waitFor(() => expect(seen!.aborted).toBe(true));
+
+    // The limiter slot is released once the aborted call settles.
+    edit.mockResolvedValueOnce(OUT);
+    await vi.waitFor(async () => {
+      const res = await request(server).post('/api/tryon').send({ image: IMG, styleId: 'bald' });
+      expect(res.status).toBe(200);
+    });
+  } finally {
+    server.close();
+  }
 });

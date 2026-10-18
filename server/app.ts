@@ -8,6 +8,7 @@ const IMAGE_RE = /^data:image\/(jpeg|png|webp);base64,/;
 export function createApp(deps: { provider: HairProvider; limiter: ReturnType<typeof createLimiter> }): express.Express {
   const { provider, limiter } = deps;
   const app = express();
+  app.disable('x-powered-by');
   app.set('trust proxy', 1);
   app.use(express.json({ limit: '8mb' }));
 

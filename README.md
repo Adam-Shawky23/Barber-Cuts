@@ -9,7 +9,7 @@ The AI part is free. It uses a Hugging Face "Space" (a free hosted AI model).
 
 ## 1. Run it on your computer
 
-You need [Node.js](https://nodejs.org) (version 20 or newer).
+You need [Node.js](https://nodejs.org) (version 22.12 or newer).
 
 1. Open a terminal in this folder.
 2. `npm install`
@@ -26,7 +26,7 @@ http://localhost:8787.
 | --- | --- |
 | `HF_SPACE` | Which AI Space to use. Default: `black-forest-labs/FLUX.1-Kontext-Dev` |
 | `HF_ENDPOINT` | Which function of that Space to call. Default: `/infer` |
-| `HF_TOKEN` | Your free Hugging Face token (optional but recommended) |
+| `HF_TOKEN` | Your free Hugging Face token. **Required for the online (Render) site**; optional only for a quick try on your own computer |
 | `PORT` | Port for the server. Default 8787 |
 
 The token stays on the server. It is never sent to the browser or written to logs.
@@ -42,6 +42,18 @@ Without a token the free allowance runs out after a couple of tries, and custome
 see "The AI is busy right now. Try again in a minute." With a token you get a larger
 daily allowance. Even then the free tier can sometimes be busy; waiting a minute usually fixes it.
 
+**For the online site a token is required.** The anonymous allowance is counted per internet
+address, and Render's servers share their addresses with many other apps, so without a token
+the online site will almost always say the AI is busy. Skipping the token is only fine for a
+quick try on your own computer.
+
+### Fair-use limit
+
+To stop one phone from using up the free AI allowance, the server allows at most 2 looks
+being made at the same time and 10 new looks per minute **per internet connection**. Everyone
+on the shop's Wi-Fi shares one internet connection, so the whole shop shares this limit. If it is
+reached, customers see the "busy" message and can try again a moment later.
+
 ## 3. Put it online (Render, free)
 
 Customers need a real web address, and the phone camera only works on **HTTPS**
@@ -50,10 +62,11 @@ Render gives you HTTPS automatically.
 
 1. Put this project on GitHub.
 2. On https://render.com, choose New, then Web Service, and connect the GitHub repo.
-3. Build command: `npm install && npm run build`
+3. Build command: `npm ci --include=dev && npm run build`
 4. Start command: `npm start`
 5. Plan: Free.
-6. Under Environment, add `HF_TOKEN` (and `HF_SPACE` / `HF_ENDPOINT` only if you change them).
+6. Under Environment, add `NODE_ENV` = `production` and `HF_TOKEN` (required, see above),
+   plus `HF_SPACE` / `HF_ENDPOINT` only if you change them.
 7. Deploy, then open the address Render gives you on your phone to test the camera.
 
 The free Render plan goes to sleep when unused, so the first visit can take about a minute to load.

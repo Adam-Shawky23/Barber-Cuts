@@ -1,51 +1,57 @@
-export function createLimiter(opts: { perMinute: number; now?: () => number }): {
+const WINDOW_MS = 60_000;
+
+/**
+ * Per-key limiter: at most `maxConcurrent` requests in flight and `perMinute` starts
+ * in any rolling 60 s window. Keys with nothing in flight and no starts in the window
+ * are evicted so the map does not grow with every visitor.
+ */
+export function createLimiter(opts: { perMinute: number; maxConcurrent?: number; now?: () => number }): {
   tryStart(key: string): boolean;
   finish(key: string): void;
+  /** Number of tracked keys (for tests). */
+  size(): number;
 } {
   const getNow = opts.now ?? (() => Date.now());
-  const perMinute = opts.perMinute;
-  const state = new Map<string, { inFlight: boolean; starts: number[] }>();
+  const { perMinute, maxConcurrent = 1 } = opts;
+  const state = new Map<string, { inFlight: number; starts: number[] }>();
 
-  function pruneOldStarts(starts: number[], currentTime: number): number[] {
-    const cutoffTime = currentTime - 60_000;
-    return starts.filter((startTime) => startTime > cutoffTime);
+  function prune(entry: { starts: number[] }, now: number): void {
+    const cutoff = now - WINDOW_MS;
+    entry.starts = entry.starts.filter((t) => t > cutoff);
+  }
+
+  function evictIdle(now: number): void {
+    for (const [key, entry] of state) {
+      prune(entry, now);
+      if (entry.inFlight === 0 && entry.starts.length === 0) state.delete(key);
+    }
   }
 
   return {
     tryStart(key: string): boolean {
       const now = getNow();
-      let entry = state.get(key);
+      evictIdle(now);
 
-      // Initialize if not exists
+      let entry = state.get(key);
       if (!entry) {
-        entry = { inFlight: false, starts: [] };
+        entry = { inFlight: 0, starts: [] };
         state.set(key, entry);
       }
 
-      // Prune old starts
-      entry.starts = pruneOldStarts(entry.starts, now);
+      if (entry.inFlight >= maxConcurrent || entry.starts.length >= perMinute) return false;
 
-      // Check if already in flight
-      if (entry.inFlight) {
-        return false;
-      }
-
-      // Check if at or over the per-minute limit
-      if (entry.starts.length >= perMinute) {
-        return false;
-      }
-
-      // Mark as in flight and record the start time
-      entry.inFlight = true;
+      entry.inFlight += 1;
       entry.starts.push(now);
       return true;
     },
 
     finish(key: string): void {
       const entry = state.get(key);
-      if (entry) {
-        entry.inFlight = false;
-      }
+      if (entry && entry.inFlight > 0) entry.inFlight -= 1;
+    },
+
+    size(): number {
+      return state.size;
     },
   };
 }
