@@ -46,4 +46,11 @@ describe('tryOn', () => {
     expect(err).toBeInstanceOf(TryOnFailure);
     expect(err.code).toBe('NETWORK');
   });
+  it('passes the abort signal to fetch', async () => {
+    const fn = mockFetch(200, { image: 'data:image/png;base64,B', label: 'Buzz cut' });
+    const ctl = new AbortController();
+    await tryOn(req, ctl.signal);
+    expect(fn.mock.calls[0][1].signal).toBe(ctl.signal);
+    expect(JSON.parse(fn.mock.calls[0][1].body)).toEqual(req);
+  });
 });

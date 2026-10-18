@@ -51,6 +51,11 @@ export function createHfSpaceProvider(cfg: HfSpaceConfig): HairProvider {
   async function run(imageDataUrl: string, prompt: string, signal: AbortSignal, held: { client?: { close?: () => void } }): Promise<string> {
     const client = await connect(cfg.space, cfg.token ? { token: cfg.token as `hf_${string}` } : undefined);
     held.client = client as unknown as { close?: () => void };
+    if (signal.aborted) {
+      // Aborted or timed out while connecting: edit() has already cleaned up, so close this late client here.
+      try { held.client.close?.(); } catch { /* ignore */ }
+      throw new ProviderError('FAILED', 'ABORTED');
+    }
     const result = (await client.predict(cfg.endpoint, {
       [cfg.imageParam ?? IMAGE_PARAM]: dataUrlToBlob(imageDataUrl),
       [PROMPT_PARAM]: prompt,

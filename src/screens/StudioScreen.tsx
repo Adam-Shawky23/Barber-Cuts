@@ -9,6 +9,13 @@ const WAIT_HINT = 'Free AI · usually 10–60 seconds.';
 
 type Request = { label: string; styleId?: string; description?: string };
 
+// Unique within the page. crypto.randomUUID() needs a secure context, so it breaks over plain http.
+let lookCounter = 0;
+function newLookId(): string {
+  lookCounter += 1;
+  return `look-${Date.now()}-${lookCounter}`;
+}
+
 export function StudioScreen({
   session,
   dispatch,
@@ -18,16 +25,12 @@ export function StudioScreen({
 }) {
   const [description, setDescription] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const mounted = useRef(false);
   const inFlight = useRef(false);
   const lastRequest = useRef<Request | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
+  // Leaving the studio abandons the generation: abort it so the server can stop too.
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   const pending = session.pending;
   const busy = pending !== null;
@@ -39,21 +42,25 @@ export function StudioScreen({
     if (!image || inFlight.current || session.pending) return;
     inFlight.current = true;
     lastRequest.current = req;
+    const controller = new AbortController();
+    abortRef.current = controller;
     dispatch({ type: 'START', label: req.label });
     try {
       const result = await tryOn(
         req.styleId ? { image, styleId: req.styleId } : { image, description: req.description },
+        controller.signal,
       );
-      if (!mounted.current) return;
+      if (controller.signal.aborted) return;
       dispatch({
         type: 'SUCCESS',
-        look: { id: crypto.randomUUID(), label: result.label, image: result.image },
+        look: { id: newLookId(), label: result.label, image: result.image },
       });
     } catch (err) {
-      if (!mounted.current) return;
+      if (controller.signal.aborted) return;
       dispatch({ type: 'FAIL', error: err instanceof TryOnFailure ? err.code : 'FAILED' });
     } finally {
       inFlight.current = false;
+      if (abortRef.current === controller) abortRef.current = null;
     }
   }
 

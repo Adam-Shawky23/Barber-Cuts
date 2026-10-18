@@ -73,7 +73,7 @@ describe('StudioScreen', () => {
     await user.click(screen.getByRole('button', { name: /Skin fade/ }));
 
     expect(spy).toHaveBeenCalledWith({ type: 'START', label: 'Skin fade' });
-    expect(mockedTryOn).toHaveBeenCalledWith({ image: SELFIE, styleId: 'skin-fade' });
+    expect(mockedTryOn).toHaveBeenCalledWith({ image: SELFIE, styleId: 'skin-fade' }, expect.any(AbortSignal));
     expect(screen.getByText('Cutting your skin fade…')).toBeInTheDocument();
     expect(screen.getByText('Free AI · usually 10–60 seconds.')).toBeInTheDocument();
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
@@ -114,7 +114,7 @@ describe('StudioScreen', () => {
     await user.type(input, '  Low Taper, curls  ');
     expect(go).toBeEnabled();
     await user.click(go);
-    expect(mockedTryOn).toHaveBeenCalledWith({ image: SELFIE, description: 'Low Taper, curls' });
+    expect(mockedTryOn).toHaveBeenCalledWith({ image: SELFIE, description: 'Low Taper, curls' }, expect.any(AbortSignal));
     expect(spy).toHaveBeenCalledWith({ type: 'START', label: 'Low Taper, curls' });
     expect(screen.getByText('Cutting your low taper, curls…')).toBeInTheDocument();
   });
@@ -123,7 +123,7 @@ describe('StudioScreen', () => {
     mockedTryOn.mockReturnValue(new Promise(() => {}));
     const { user } = setup();
     await user.type(screen.getByRole('textbox'), 'mullet{Enter}');
-    expect(mockedTryOn).toHaveBeenCalledWith({ image: SELFIE, description: 'mullet' });
+    expect(mockedTryOn).toHaveBeenCalledWith({ image: SELFIE, description: 'mullet' }, expect.any(AbortSignal));
   });
 
   it('BUSY shows the busy copy and Try again re-sends the same request', async () => {
@@ -136,7 +136,7 @@ describe('StudioScreen', () => {
     mockedTryOn.mockResolvedValueOnce({ image: RESULT, label: 'Mohawk' });
     await user.click(screen.getByRole('button', { name: 'Try again' }));
     expect(mockedTryOn).toHaveBeenCalledTimes(2);
-    expect(mockedTryOn).toHaveBeenLastCalledWith({ image: SELFIE, styleId: 'mohawk' });
+    expect(mockedTryOn).toHaveBeenLastCalledWith({ image: SELFIE, styleId: 'mohawk' }, expect.any(AbortSignal));
     expect(await screen.findByAltText('You with Mohawk')).toBeInTheDocument();
     expect(screen.queryByText(BUSY)).not.toBeInTheDocument();
   });
@@ -149,7 +149,7 @@ describe('StudioScreen', () => {
     expect(await screen.findByText(FAILED)).toBeInTheDocument();
     mockedTryOn.mockReturnValue(new Promise(() => {}));
     await user.click(screen.getByRole('button', { name: 'Try again' }));
-    expect(mockedTryOn).toHaveBeenLastCalledWith({ image: SELFIE, description: 'curly top' });
+    expect(mockedTryOn).toHaveBeenLastCalledWith({ image: SELFIE, description: 'curly top' }, expect.any(AbortSignal));
   });
 
   it('Retake selfie dispatches RETAKE', async () => {
@@ -180,5 +180,38 @@ describe('StudioScreen', () => {
     await act(async () => d.resolve({ image: RESULT, label: 'Afro' }));
     await waitFor(() => expect(spy).toHaveBeenCalledTimes(1));
     expect(spy.mock.calls.map(([a]) => a.type)).toEqual(['START']);
+  });
+  it('unmounting mid-run aborts the request and dispatches nothing more', async () => {
+    mockedTryOn.mockImplementation(
+      (_req, signal) =>
+        new Promise((_, reject) => {
+          signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+        }),
+    );
+    const { spy, user, unmount } = setup();
+    await user.click(screen.getByRole('button', { name: /Braids/ }));
+    const signal = mockedTryOn.mock.calls[0][1];
+    expect(signal).toBeInstanceOf(AbortSignal);
+    expect(signal?.aborted).toBe(false);
+    unmount();
+    expect(signal?.aborted).toBe(true);
+    await act(async () => {});
+    expect(spy.mock.calls.map(([a]) => a.type)).toEqual(['START']);
+  });
+
+  it('each run gets a fresh signal and look ids are unique', async () => {
+    mockedTryOn
+      .mockResolvedValueOnce({ image: RESULT, label: 'Bald' })
+      .mockResolvedValueOnce({ image: RESULT, label: 'Afro' });
+    const { spy, user } = setup();
+    await user.click(screen.getByRole('button', { name: /Bald/ }));
+    await screen.findByAltText('You with Bald');
+    await user.click(screen.getByRole('button', { name: /Afro/ }));
+    await screen.findByAltText('You with Afro');
+    const [a, b] = mockedTryOn.mock.calls.map((c) => c[1]);
+    expect(a).not.toBe(b);
+    const ids = spy.mock.calls.flatMap(([x]) => (x.type === 'SUCCESS' ? [x.look.id] : []));
+    expect(ids).toHaveLength(2);
+    expect(new Set(ids).size).toBe(2);
   });
 });

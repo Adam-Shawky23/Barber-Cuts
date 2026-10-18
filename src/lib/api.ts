@@ -16,17 +16,21 @@ function codeForStatus(status: number): TryOnError {
   return 'FAILED';
 }
 
-export async function tryOn(req: {
-  image: string;
-  styleId?: string;
-  description?: string;
-}): Promise<{ image: string; label: string }> {
+export async function tryOn(
+  req: {
+    image: string;
+    styleId?: string;
+    description?: string;
+  },
+  signal?: AbortSignal,
+): Promise<{ image: string; label: string }> {
   let res: Response;
   try {
     res = await fetch('/api/tryon', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req),
+      signal,
     });
   } catch {
     throw new TryOnFailure('NETWORK');

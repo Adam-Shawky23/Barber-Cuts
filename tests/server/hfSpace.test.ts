@@ -73,4 +73,30 @@ describe('createHfSpaceProvider', () => {
     });
     await expect(p.edit(IMG, 'p', AbortSignal.abort())).rejects.toMatchObject({ message: 'ABORTED' });
   });
+  it('closes a client that connects after abort and never calls predict', async () => {
+    let finishConnect!: () => void;
+    const predict = vi.fn();
+    const close = vi.fn();
+    const connect = (() => new Promise((r) => { finishConnect = () => r({ predict, close }); })) as never;
+    const p = createHfSpaceProvider({ space: 's/x', endpoint: '/e', connect });
+    const ctl = new AbortController();
+    const pending = p.edit(IMG, 'p', ctl.signal);
+    ctl.abort();
+    await expect(pending).rejects.toMatchObject({ message: 'ABORTED' });
+    finishConnect();
+    await vi.waitFor(() => expect(close).toHaveBeenCalledTimes(1));
+    expect(predict).not.toHaveBeenCalled();
+  });
+
+  it('closes a client that connects after the timeout and never calls predict', async () => {
+    let finishConnect!: () => void;
+    const predict = vi.fn();
+    const close = vi.fn();
+    const connect = (() => new Promise((r) => { finishConnect = () => r({ predict, close }); })) as never;
+    const p = createHfSpaceProvider({ space: 's/x', endpoint: '/e', timeoutMs: 5, connect });
+    await expect(p.edit(IMG, 'p')).rejects.toMatchObject({ code: 'TIMEOUT' });
+    finishConnect();
+    await vi.waitFor(() => expect(close).toHaveBeenCalledTimes(1));
+    expect(predict).not.toHaveBeenCalled();
+  });
 });
