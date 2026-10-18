@@ -273,3 +273,263 @@ input {
   font-size: 12px;
   line-height: 1.5;
 }
+
+/* Studio: result, waiting and style picker */
+.stage .dimmed {
+  filter: grayscale(0.6) brightness(0.7);
+}
+
+.reveal {
+  animation: reveal 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes reveal {
+  from {
+    clip-path: inset(0 0 100% 0);
+    filter: brightness(1.6);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    filter: none;
+  }
+}
+
+.stylename {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 40px 16px 14px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+}
+
+.stylename b {
+  display: block;
+  font-size: 26px;
+  overflow-wrap: anywhere;
+}
+
+.stylename small {
+  color: var(--mute);
+  font-size: 12px;
+}
+
+.waiting {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.scan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -80px;
+  height: 80px;
+  background: linear-gradient(transparent, rgba(217, 164, 65, 0.35), transparent);
+  animation: scan 2s ease-in-out infinite;
+}
+
+@keyframes scan {
+  from {
+    top: -80px;
+  }
+  to {
+    top: 100%;
+  }
+}
+
+.clip {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 90%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.clip p {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--cream);
+  overflow-wrap: anywhere;
+}
+
+.snip {
+  display: inline-block;
+  font-size: 44px;
+  animation: snip 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes snip {
+  to {
+    transform: rotate(-20deg);
+  }
+}
+
+.bar {
+  height: 4px;
+  border-radius: 2px;
+  background: #2a2622;
+  overflow: hidden;
+}
+
+.bar i {
+  display: block;
+  height: 100%;
+  width: 40%;
+  background: var(--gold);
+  animation: bar-slide 1.4s ease-in-out infinite;
+}
+
+@keyframes bar-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+
+.hint {
+  margin: 6px 0 0;
+  color: var(--mute);
+  font-size: 12px;
+  text-align: center;
+}
+
+.try-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  margin: 0 -18px;
+  padding: 2px 18px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.strip::-webkit-scrollbar {
+  display: none;
+}
+
+.thumb {
+  flex: 0 0 auto;
+  width: 66px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--mute);
+  font-size: 11px;
+  line-height: 1.25;
+  text-align: center;
+  cursor: pointer;
+}
+
+.thumb .t {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 62px;
+  height: 62px;
+  margin: 0 auto 5px;
+  border-radius: 16px;
+  border: 2px solid transparent;
+  background: #2a2622;
+  font-size: 24px;
+}
+
+.thumb.on {
+  color: var(--ink);
+}
+
+.thumb.on .t {
+  border-color: var(--gold);
+}
+
+.thumb:focus-visible {
+  outline: none;
+}
+
+.thumb:focus-visible .t {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.thumb:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ask {
+  display: flex;
+  gap: 8px;
+}
+
+.ask input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--well);
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.ask input::placeholder {
+  color: var(--mute);
+}
+
+.ask input:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+}
+
+.ask .btn {
+  padding: 0 18px;
+}
+
+.link {
+  align-self: flex-start;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: var(--mute);
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.link:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Tablet: styles beside the photo wrap into a grid instead of scrolling */
+@media (min-width: 768px) {
+  .strip {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .scan,
+  .snip {
+    animation: none;
+  }
+
+  .scan {
+    display: none;
+  }
+}
