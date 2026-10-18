@@ -156,6 +156,13 @@ describe('sessionReducer', () => {
     const result = sessionReducer(session, { type: 'GO', view: 'lookbook' });
     expect(result.view).toBe('lookbook');
   });
+
+  it('GO clears a stale error', () => {
+    const session: Session = { ...initialSession, view: 'studio', error: 'BUSY' };
+
+    const result = sessionReducer(session, { type: 'GO', view: 'lookbook' });
+    expect(result.error).toBeNull();
+  });
 });
 
 describe('favoriteLook', () => {

@@ -105,6 +105,7 @@ export function sessionReducer(s: Session, a: Action): Session {
       return {
         ...s,
         view: a.view,
+        error: null,
       };
 
     case 'NEW_CUSTOMER':
