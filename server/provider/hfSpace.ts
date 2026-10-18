@@ -15,7 +15,7 @@ export interface HfSpaceConfig {
 export const IMAGE_PARAM = 'input_image';
 export const PROMPT_PARAM = 'prompt';
 
-const BUSY_RE = /quota|queue|exceeded|too many|busy|sleeping|503|429/i;
+const BUSY_RE = /quota|queue|exceeded|too many|busy|sleeping|503|429|GPU duration|ZeroGPU|larger than maximum/i;
 
 function errorText(e: unknown): string {
   if (e instanceof Error) return e.message;
@@ -45,11 +45,12 @@ function firstImageUrl(data: unknown): string | undefined {
 }
 
 export function createHfSpaceProvider(cfg: HfSpaceConfig): HairProvider {
-  const timeoutMs = cfg.timeoutMs ?? 90_000;
+  const timeoutMs = cfg.timeoutMs ?? 120_000;
   const connect = cfg.connect ?? ((...a: Parameters<typeof Client.connect>) => Client.connect(...a));
 
-  async function run(imageDataUrl: string, prompt: string, signal: AbortSignal): Promise<string> {
+  async function run(imageDataUrl: string, prompt: string, signal: AbortSignal, held: { client?: { close?: () => void } }): Promise<string> {
     const client = await connect(cfg.space, cfg.token ? { token: cfg.token as `hf_${string}` } : undefined);
+    held.client = client as unknown as { close?: () => void };
     const result = (await client.predict(cfg.endpoint, {
       [cfg.imageParam ?? IMAGE_PARAM]: dataUrlToBlob(imageDataUrl),
       [PROMPT_PARAM]: prompt,
@@ -66,24 +67,32 @@ export function createHfSpaceProvider(cfg: HfSpaceConfig): HairProvider {
   return {
     async edit(imageDataUrl, prompt, signal) {
       const ctl = new AbortController();
-      const onAbort = () => ctl.abort();
-      signal?.addEventListener('abort', onAbort);
+      const held: { client?: { close?: () => void } } = {};
       let timer: NodeJS.Timeout | undefined;
-      const timeout = new Promise<never>((_, reject) => {
+      let onAbort: (() => void) | undefined;
+      const guard = new Promise<never>((_, reject) => {
         timer = setTimeout(() => {
           ctl.abort();
           reject(new ProviderError('TIMEOUT', 'Model timed out'));
         }, timeoutMs);
+        onAbort = () => {
+          ctl.abort();
+          reject(new ProviderError('FAILED', 'ABORTED'));
+        };
+        if (signal?.aborted) onAbort();
+        else signal?.addEventListener('abort', onAbort);
       });
       try {
-        return await Promise.race([run(imageDataUrl, prompt, ctl.signal), timeout]);
+        if (signal?.aborted) await guard;
+        return await Promise.race([run(imageDataUrl, prompt, ctl.signal, held), guard]);
       } catch (e) {
         if (e instanceof ProviderError) throw e;
         const msg = errorText(e);
         throw new ProviderError(BUSY_RE.test(msg) ? 'BUSY' : 'FAILED', msg);
       } finally {
         clearTimeout(timer);
-        signal?.removeEventListener('abort', onAbort);
+        if (onAbort) signal?.removeEventListener('abort', onAbort);
+        try { held.client?.close?.(); } catch { /* ignore */ }
       }
     },
   };

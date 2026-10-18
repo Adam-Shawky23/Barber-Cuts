@@ -46,4 +46,31 @@ describe('createHfSpaceProvider', () => {
     });
     await expect(p.edit(IMG, 'p')).rejects.toMatchObject({ code: 'TIMEOUT' });
   });
+
+  it('maps ZeroGPU duration errors to BUSY', async () => {
+    const p = createHfSpaceProvider({
+      space: 's/x', endpoint: '/e',
+      connect: fakeConnect(async () => { throw new Error('The requested GPU duration (240s) is larger than the maximum allowed'); }),
+    });
+    await expect(p.edit(IMG, 'p')).rejects.toMatchObject({ code: 'BUSY' });
+  });
+
+  it('abort mid-predict rejects promptly', async () => {
+    const p = createHfSpaceProvider({
+      space: 's/x', endpoint: '/e',
+      connect: fakeConnect(() => new Promise(() => {})),
+    });
+    const ctl = new AbortController();
+    const pending = p.edit(IMG, 'p', ctl.signal);
+    setTimeout(() => ctl.abort(), 5);
+    await expect(pending).rejects.toMatchObject({ code: 'FAILED', message: 'ABORTED' });
+  });
+
+  it('already-aborted signal rejects', async () => {
+    const p = createHfSpaceProvider({
+      space: 's/x', endpoint: '/e',
+      connect: fakeConnect(() => new Promise(() => {})),
+    });
+    await expect(p.edit(IMG, 'p', AbortSignal.abort())).rejects.toMatchObject({ message: 'ABORTED' });
+  });
 });
