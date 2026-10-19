@@ -100,6 +100,21 @@ describe('Lookbook', () => {
   it('shows the empty state with no looks', () => {
     setup({ ...start, looks: [] });
     expect(screen.getByText('No looks yet. Pick a style to get started.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Show my barber/ })).toBeNull();
+  });
+
+  it('Back returns to the studio when there is a selfie', async () => {
+    const { spy, user } = setup();
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+    expect(spy).toHaveBeenCalledWith({ type: 'GO', view: 'studio' });
+    expect(screen.getByText('studio screen')).toBeInTheDocument();
+  });
+
+  it('an empty lookbook opened before a selfie leads back to the selfie screen', async () => {
+    const { spy, user } = setup({ ...initialSession, view: 'lookbook' });
+    await user.click(screen.getByRole('button', { name: 'Pick a style' }));
+    expect(spy).toHaveBeenCalledWith({ type: 'GO', view: 'selfie' });
+    expect(screen.getByText('selfie screen')).toBeInTheDocument();
   });
 
   it('New customer resets to the selfie screen with zero looks', async () => {
