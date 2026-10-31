@@ -107,14 +107,13 @@ export function SelfieScreen({ onSelfie }: { onSelfie(image: string): void }) {
           onResize={checkVideoReady}
         />
         {camera !== 'live' && (
-          <div className="stage-empty" aria-hidden="true">
-            ✂️
-          </div>
+          <div className="stage-empty" aria-hidden="true" />
         )}
       </div>
 
       <section className="panel controls">
         <p className="selfie-hint display">Face the camera, hair visible.</p>
+        <p className="selfie-sub">Take a selfie or upload a photo, then try on any cut.</p>
         {camera === 'unavailable' && (
           <p className="notice" role="status">
             {NO_CAMERA}

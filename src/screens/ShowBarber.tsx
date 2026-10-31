@@ -6,7 +6,7 @@ export function ShowBarber({ look, onClose }: { look: Look; onClose(): void }) {
       <div className="stage">
         <img src={look.image} alt={look.label} />
         <div className="stylename">
-          <b className="display">{look.label.toUpperCase()}</b>
+          <b className="display">{look.label}</b>
         </div>
       </div>
       <button type="button" className="btn btn-ghost" onClick={onClose}>

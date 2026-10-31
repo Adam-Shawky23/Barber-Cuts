@@ -1,0 +1,16 @@
+{
+  "name": "Fresh Cut",
+  "short_name": "Fresh Cut",
+  "description": "Try a new haircut on your selfie before you sit in the chair.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f2f3f1",
+  "theme_color": "#f2f3f1",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

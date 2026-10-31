@@ -84,7 +84,7 @@ describe('StudioScreen', () => {
     expect(img).toHaveAttribute('src', RESULT);
     expect(screen.queryByAltText('Your selfie')).not.toBeInTheDocument();
     expect(screen.getAllByRole('img')).toHaveLength(1);
-    expect(screen.getByText('SKIN FADE')).toBeInTheDocument();
+    expect(screen.getByText('Skin fade', { selector: 'b' })).toBeInTheDocument();
     expect(screen.queryByText('Cutting your skin fade…')).not.toBeInTheDocument();
     const success = spy.mock.calls.find(([a]) => a.type === 'SUCCESS')?.[0];
     expect(success).toMatchObject({ type: 'SUCCESS', look: { label: 'Skin fade', image: RESULT } });

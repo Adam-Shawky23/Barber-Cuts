@@ -164,6 +164,13 @@ describe('sessionReducer', () => {
     const result = sessionReducer(session, { type: 'GO', view: 'lookbook' });
     expect(result.error).toBeNull();
   });
+
+  it('GO away from the studio drops a pending look (back gesture mid-generation)', () => {
+    const session: Session = { ...initialSession, view: 'studio', pending: { label: 'Afro' } };
+
+    expect(sessionReducer(session, { type: 'GO', view: 'selfie' }).pending).toBeNull();
+    expect(sessionReducer(session, { type: 'GO', view: 'studio' }).pending).toEqual({ label: 'Afro' });
+  });
 });
 
 describe('favoriteLook', () => {

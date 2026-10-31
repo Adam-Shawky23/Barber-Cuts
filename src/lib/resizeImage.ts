@@ -5,12 +5,36 @@ export function fitSize(w: number, h: number, max = 1024): { width: number; heig
   return { width: Math.round(w * scale), height: Math.round(h * scale) };
 }
 
-async function loadBitmap(blob: Blob): Promise<ImageBitmap> {
-  try {
-    return await createImageBitmap(blob, { imageOrientation: 'from-image' });
-  } catch {
-    throw new Error('NOT_IMAGE');
+// Fallback for browsers without createImageBitmap(blob, options) (older iOS Safari).
+// Modern browsers apply the photo's EXIF rotation to <img> by default.
+function loadImageElement(blob: Blob): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('NOT_IMAGE'));
+    };
+    img.src = url;
+  });
+}
+
+async function loadImage(blob: Blob): Promise<{ drawable: CanvasImageSource; w: number; h: number }> {
+  if (typeof createImageBitmap === 'function') {
+    try {
+      const bitmap = await createImageBitmap(blob, { imageOrientation: 'from-image' });
+      return { drawable: bitmap, w: bitmap.width, h: bitmap.height };
+    } catch {
+      // fall through to <img>
+    }
   }
+  const img = await loadImageElement(blob);
+  if (!img.naturalWidth || !img.naturalHeight) throw new Error('NOT_IMAGE');
+  return { drawable: img, w: img.naturalWidth, h: img.naturalHeight };
 }
 
 export async function resizeImage(source: Blob | HTMLVideoElement): Promise<string> {
@@ -20,11 +44,9 @@ export async function resizeImage(source: Blob | HTMLVideoElement): Promise<stri
   let mirrorBack = false;
 
   if (source instanceof Blob) {
-    if (!source.type.startsWith('image/')) throw new Error('NOT_IMAGE');
-    const bitmap = await loadBitmap(source);
-    drawable = bitmap;
-    w = bitmap.width;
-    h = bitmap.height;
+    // Some Android pickers (cloud/gallery apps) give files no type: let the decoder decide.
+    if (source.type && !source.type.startsWith('image/')) throw new Error('NOT_IMAGE');
+    ({ drawable, w, h } = await loadImage(source));
   } else {
     drawable = source;
     w = source.videoWidth;

@@ -82,11 +82,8 @@ export function StudioScreen({
           <>
             <img key={look.id} src={look.image} alt={`You with ${look.label}`} className="reveal" />
             <div className="stylename">
-              <b className="display">{look.label.toUpperCase()}</b>
-              <small>
-                Tap another style <span className="on-phone">below ↓</span>
-                <span className="on-wide">→</span>
-              </small>
+              <b className="display">{look.label}</b>
+              <small>Tap another style to compare</small>
             </div>
           </>
         )}

@@ -10,7 +10,7 @@ export function Header({ onNewCustomer, onLookbook, lookCount, busy }: HeaderPro
     <header className="header">
       <div className="brand-wrap">
         <span className="brand">
-          FRESH<span className="gold">CUT</span>
+          Fresh Cut
         </span>
         <span className="pole" aria-hidden="true" />
       </div>
@@ -19,7 +19,8 @@ export function Header({ onNewCustomer, onLookbook, lookCount, busy }: HeaderPro
           Lookbook <span className="count">{lookCount}</span>
         </button>
         <button type="button" className="btn btn-ghost btn-small" onClick={onNewCustomer}>
-          New customer
+          <span className="wide-only">New customer</span>
+          <span className="narrow-only">New</span>
         </button>
       </nav>
     </header>

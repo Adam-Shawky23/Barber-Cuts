@@ -108,6 +108,8 @@ export function sessionReducer(s: Session, a: Action): Session {
         ...s,
         view: a.view,
         error: null,
+        // Leaving the studio (e.g. the phone's back gesture) abandons any look being made.
+        pending: a.view === 'studio' ? s.pending : null,
       };
 
     case 'NEW_CUSTOMER':

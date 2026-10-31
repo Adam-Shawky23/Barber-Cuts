@@ -83,7 +83,7 @@ describe('Lookbook', () => {
     await user.click(screen.getByRole('button', { name: 'Show my barber ★ Skin fade' }));
     expect(spy).toHaveBeenCalledWith({ type: 'GO', view: 'barber' });
     expect(screen.getByAltText('Skin fade')).toHaveAttribute('src', looks[0].image);
-    expect(screen.getByText('SKIN FADE')).toBeInTheDocument();
+    expect(screen.getByText('Skin fade')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Close' }));
     expect(spy).toHaveBeenLastCalledWith({ type: 'GO', view: 'lookbook' });
     expect(screen.getByRole('button', { name: /Show my barber/ })).toBeInTheDocument();

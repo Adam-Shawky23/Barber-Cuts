@@ -71,6 +71,16 @@ Render gives you HTTPS automatically.
 
 The free Render plan goes to sleep when unused, so the first visit can take about a minute to load.
 
+### Put it on customers' phones like an app
+
+The site works in Safari (iPhone/iPad) and Chrome (Android). It can also be added to the home
+screen, where it opens full screen with its own icon:
+
+- **iPhone / iPad:** open the site in Safari, tap Share, then "Add to Home Screen".
+- **Android:** open the site in Chrome, tap the ⋮ menu, then "Add to Home screen" (or "Install app").
+
+The phone's back button and swipe-back move between screens without losing the looks.
+
 ## 4. Switching to a different or paid AI
 
 Change `HF_SPACE` (and `HF_ENDPOINT` if that Space uses a different function name) in `.env`
