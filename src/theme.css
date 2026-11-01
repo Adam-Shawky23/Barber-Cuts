@@ -161,7 +161,8 @@ img {
   white-space: nowrap;
 }
 
-.narrow-only {
+.narrow-only,
+.desktop-only {
   display: none;
 }
 
@@ -978,6 +979,201 @@ img {
   }
 }
 
+/* Mouse and trackpad: hover feedback (touch screens skip this, so taps don't leave stuck highlights) */
+@media (hover: hover) and (pointer: fine) {
+  .btn-gold:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 86%, var(--ink));
+  }
+
+  .btn-ghost:hover:not(:disabled):not(:has(input:disabled)) {
+    background: var(--well);
+  }
+
+  .thumb:hover:not(:disabled) {
+    color: var(--ink);
+  }
+
+  .thumb:hover:not(:disabled):not(.on) .t {
+    border-color: var(--line);
+    transform: translateY(-2px);
+  }
+
+  .link:hover:not(:disabled) {
+    color: var(--ink);
+  }
+
+  .card-open img {
+    transition: transform 0.3s ease;
+  }
+
+  .card-open:hover img {
+    transform: scale(1.04);
+  }
+
+  .card-star:hover {
+    background: var(--accent);
+  }
+}
+
+/* Laptop and desktop: photo sized to the window, controls beside it, the pair centred */
+@media (min-width: 1024px) {
+  .app {
+    max-width: 1320px;
+  }
+
+  .header {
+    padding: calc(var(--safe-top) + 20px) 40px 20px;
+  }
+
+  .brand {
+    font-size: 26px;
+  }
+
+  .header .btn-small {
+    min-height: 44px;
+    padding: 10px 18px;
+    font-size: 15px;
+  }
+
+  .desktop-only {
+    display: block;
+  }
+
+  .screen {
+    padding: 8px 40px 40px;
+  }
+
+  .split {
+    grid-template-columns: auto minmax(380px, 460px);
+    justify-content: center;
+    align-items: center;
+    gap: clamp(32px, 4vw, 64px);
+  }
+
+  .split .stage {
+    width: auto;
+    height: clamp(440px, calc(100dvh - 136px - var(--safe-top) - var(--safe-bottom)), 880px);
+    max-height: none;
+  }
+
+  .split .panel {
+    position: static;
+    padding: 32px;
+    gap: 16px;
+  }
+
+  .selfie-hint {
+    font-size: 40px;
+    line-height: 1.05;
+  }
+
+  .selfie-sub {
+    font-size: 17px;
+  }
+
+  .steps {
+    margin: 8px 0 0;
+    padding: 20px 0 0;
+    border-top: 1px solid var(--line);
+    list-style: none;
+    counter-reset: step;
+    display: grid;
+    gap: 14px;
+  }
+
+  .steps li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 32px 1fr;
+    gap: 12px;
+    align-items: start;
+    color: var(--mute);
+    font-size: 15px;
+  }
+
+  .steps li::before {
+    content: counter(step);
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  .steps li span {
+    padding-top: 5px;
+  }
+
+  .steps b {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .studio-controls .section-title + .strip,
+  .studio-controls .section-title + .ask {
+    margin-top: -4px;
+  }
+
+  .thumb {
+    font-size: 14px;
+  }
+
+  .thumb .t {
+    width: 72px;
+    height: 72px;
+    font-size: 32px;
+  }
+
+  .stylename b {
+    font-size: 36px;
+  }
+
+  .lookbook-head h1 {
+    font-size: 40px;
+  }
+
+  .grid {
+    gap: 18px;
+  }
+
+  .show-barber {
+    margin-left: -40px;
+    margin-right: -40px;
+    margin-bottom: -40px;
+    padding-bottom: 32px;
+  }
+
+  .barber .stage {
+    height: calc(100dvh - 200px - var(--safe-top) - var(--safe-bottom));
+  }
+}
+
+@media (min-width: 1280px) {
+  .grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+/* Short laptop screens: trim the extras so everything fits without scrolling */
+@media (min-width: 1024px) and (max-height: 760px) {
+  .steps {
+    display: none;
+  }
+
+  .selfie-hint {
+    font-size: 32px;
+  }
+
+  .split .panel {
+    padding: 24px;
+    gap: 12px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pole,
   .reveal,
@@ -992,7 +1188,8 @@ img {
   }
 
   .btn,
-  .thumb .t {
+  .thumb .t,
+  .card-open img {
     transition: none;
   }
 }

@@ -123,6 +123,7 @@ export function StudioScreen({
           </div>
         )}
 
+        <h2 className="section-title desktop-only">Pick a cut</h2>
         <div className="strip">
           {STYLES.map((s) => (
             <button
@@ -143,6 +144,7 @@ export function StudioScreen({
           ))}
         </div>
 
+        <h2 className="section-title desktop-only">Or describe your own</h2>
         <form className="ask" onSubmit={onDescribe}>
           <input
             type="text"

@@ -144,6 +144,23 @@ export function SelfieScreen({ onSelfie }: { onSelfie(image: string): void }) {
             {error}
           </p>
         )}
+        <ol className="steps desktop-only">
+          <li>
+            <span>
+              <b>Snap a selfie</b> or upload a clear photo of your face.
+            </span>
+          </li>
+          <li>
+            <span>
+              <b>Pick a cut</b> from the list, or describe the one you want.
+            </span>
+          </li>
+          <li>
+            <span>
+              <b>Star your favourite</b> in the lookbook and show your barber.
+            </span>
+          </li>
+        </ol>
         <p className="privacy">{PRIVACY}</p>
       </section>
     </main>
