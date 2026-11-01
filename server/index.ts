@@ -3,15 +3,14 @@ import path from 'node:path';
 import express from 'express';
 import { createApp } from './app';
 import { createLimiter } from './rateLimit';
-import { createHfSpaceProvider } from './provider/hfSpace';
+import { createFallbackProvider } from './provider/fallback';
+import { buildChain } from './provider/fromEnv';
 
 if (existsSync('.env')) process.loadEnvFile('.env');
 
-const provider = createHfSpaceProvider({
-  space: process.env.HF_SPACE || 'black-forest-labs/FLUX.1-Kontext-Dev',
-  endpoint: process.env.HF_ENDPOINT || '/infer',
-  token: process.env.HF_TOKEN || undefined,
-});
+const chain = buildChain(process.env);
+const provider = chain.length === 1 ? chain[0].provider : createFallbackProvider(chain);
+console.log(`AI services, in order: ${chain.map((c) => c.name).join(' → ')}`);
 
 const app = createApp({ provider, limiter: createLimiter({ perMinute: 10, maxConcurrent: 2 }) });
 

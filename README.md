@@ -28,6 +28,10 @@ http://localhost:8787.
 | `HF_ENDPOINT` | Which function of that Space to call. Default: `/infer` |
 | `HF_TOKEN` | Your free Hugging Face token. **Required for the online (Render) site**; optional only for a quick try on your own computer |
 | `PORT` | Port for the server. Default 8787 |
+| `HF_FALLBACK_SPACES` | Optional. Other Hugging Face Spaces to try (see "Backup AI services" below) |
+| `CF_ACCOUNT_ID`, `CF_API_TOKEN` | Optional, **free**. Cloudflare Workers AI, used when Hugging Face is busy or out of free quota |
+| `FAL_KEY` | Optional, paid. fal.ai key, used after Cloudflare |
+| `GEMINI_API_KEY` | Optional, paid. Google Gemini key, used after fal.ai |
 
 The token stays on the server. It is never sent to the browser or written to logs.
 
@@ -81,7 +85,39 @@ screen, where it opens full screen with its own icon:
 
 The phone's back button and swipe-back move between screens without losing the looks.
 
-## 4. Switching to a different or paid AI
+## 4. Backup AI services (more looks when the free quota runs out)
+
+When the Hugging Face Space says it's busy or the free daily allowance is used up, the server
+automatically tries the next service in this order:
+
+1. The main Space (`HF_SPACE`)
+2. Any extra Spaces in `HF_FALLBACK_SPACES`
+3. **Cloudflare Workers AI (free)** if `CF_ACCOUNT_ID` and `CF_API_TOKEN` are set: FLUX.2 [klein],
+   from the same company as the main model. The free allowance is 10,000 "neurons" a day, roughly 90 looks (estimated from
+   Cloudflare's price list),
+   and it refills every day at midnight UTC. No card needed.
+4. **fal.ai (paid)** if `FAL_KEY` is set: the same FLUX Kontext model as the main Space. Paid per image.
+5. **Google Gemini (paid)** if `GEMINI_API_KEY` is set. Gemini's image model is paid in the API
+   (its free period has ended). Looks may differ a bit from FLUX.
+
+Add only the keys you want; with none, it works exactly as before. To stay free, set just the
+Cloudflare settings. A service that says it's busy is skipped for 5 minutes, so later customers go
+straight to the backup instead of waiting. When the server starts it prints the order it will use,
+e.g. `AI services, in order: hf:... → cloudflare`. On Render, add the keys under Environment.
+
+- **Cloudflare (free):** create a free account at https://dash.cloudflare.com. Your Account ID is on the
+  Workers & Pages page. For the token: My Profile, then API Tokens, then Create Token, and use the
+  "Workers AI" template. Put them in `CF_ACCOUNT_ID` and `CF_API_TOKEN`.
+- **fal.ai key:** sign up at https://fal.ai, add credit, then Dashboard, then Keys. Check their pricing page for the current price per image.
+- **Gemini key:** sign in at https://aistudio.google.com/apikey and create a key. Image editing is billed, so add billing in Google AI Studio.
+- **Extra Spaces** use your `HF_TOKEN` too. Another free (ZeroGPU) Space shares the same daily
+  allowance as the main one, so it only helps when one Space is overloaded or down, not when the
+  allowance is used up. Format: `owner/space|/endpoint|image_param`, comma-separated.
+
+All keys stay on the server, like the Hugging Face token. The selfie is sent to whichever service
+makes the look.
+
+## 5. Switching to a different or paid AI
 
 Change `HF_SPACE` (and `HF_ENDPOINT` if that Space uses a different function name) in `.env`
 or in Render's Environment settings, then restart. For a paid or private Space, use a token
